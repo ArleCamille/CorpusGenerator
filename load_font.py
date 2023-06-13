@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 import os
 import json
 from PIL import Image

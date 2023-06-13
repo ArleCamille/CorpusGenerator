@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 from load_font import Font
 from PIL import Image, ImageFilter
 import argparse
