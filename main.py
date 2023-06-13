@@ -92,15 +92,9 @@ if __name__ == '__main__':
     
     index = opt.start_index
     
-    filters = []
-    if opt.random_blur:
-        filters.append(CopyFilter())
-        for i in range(1, opt.blur + 1):
-            filters.append(ImageFilter.GaussianBlur(radius=i))
-    elif opt.blur > 0:
-        filters = [ImageFilter.GaussianBlur(radius=opt.blur)]
-    else:
-        filters = [CopyFilter()]
+    filter = CopyFilter()
+    if opt.blur > 0 and not opt.random_blur:
+        filter = ImageFilter.GaussianBlur(radius=opt.blur)
     for string in strings:
         """ 2. generate plain text, resize and rotate it """
         with font.render_string(string) as raw_image:
@@ -108,15 +102,17 @@ if __name__ == '__main__':
             rotation_angle = random.randint(-opt.skew_angle, opt.skew_angle) if opt.random_skew else opt.skew_angle
             with raw_image.resize((new_width, opt.format), Image.Resampling.LANCZOS) as resized_raw_image, resized_raw_image.rotate(rotation_angle, expand=1) as rotated_raw_image:
                 """ 3. apply background """
-                bg_width = rotated_raw_image.width + font.font_height
-                bg_height = rotated_raw_image.height + font.font_height
+                bg_width = rotated_raw_image.width + opt.format
+                bg_height = rotated_raw_image.height + opt.format
                 with background_generator.generate_background(bg_width, bg_height, opt.background) as bg, Image.new('RGBA', (bg_width, bg_height), (255, 255, 255, 0)) as composite_fg:
-                    composite_fg.paste(rotated_raw_image, (font.font_height // 2, font.font_height // 2))
+                    composite_fg.paste(rotated_raw_image, (opt.format // 2, opt.format // 2))
                     bg.alpha_composite(composite_fg)
                     """ 4. apply gaussian blur if applicable """
-                    current_filter = random.choice(filters)
-                    with bg.filter(current_filter) as final:
-                        filename = str(index).rjust(len(str(len(strings))), '0')
+                    if opt.random_blur:
+                        filter = ImageFilter.GaussianBlur(radius=random.random() * opt.blur)
+                    with bg.filter(filter) as final:
+                        #filename = str(index).rjust(len(str(len(strings))), '0')
+                        filename = string
                         image_path = os.path.join(OUTPUT_DIR, f'{filename}.{opt.extension}')
                         try:
                             final.save(image_path)
